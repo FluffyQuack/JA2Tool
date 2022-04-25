@@ -5,6 +5,7 @@
 #include "create.h"
 #include "misc.h"
 #include "dir.h"
+#include "STI\ConvertFromSTI.h"
 
 enum
 {
@@ -12,7 +13,7 @@ enum
 	MODE_EXTRACT,
 	MODE_LISTFILES,
 	//MODE_REPACK,
-	//MODE_SINGLEFILE_STI,
+	MODE_SINGLEFILE_STI,
 };
 
 bool convertFromSTI = 0;
@@ -68,8 +69,8 @@ int _tmain(int argc, _TCHAR *argv[])
 
 		if(fileType == FILETYPE_SLF)
 			mode = MODE_EXTRACT;
-		//else if(fileType == FILETYPE_STI)
-			//mode = MODE_SINGLEFILE_STI;
+		else if(fileType == FILETYPE_STI)
+			mode = MODE_SINGLEFILE_STI;
 	}
 
 	if(mode == MODE_EXTRACT && str1)
@@ -84,10 +85,10 @@ int _tmain(int argc, _TCHAR *argv[])
 	{
 		ListFilesInSLF(str1);
 	}
-	/*else if(mode == MODE_SINGLEFILE_STI && str1)
+	else if(mode == MODE_SINGLEFILE_STI && str1)
 	{
-		STItoPNG(str1);
-	}*/
+		ConvertFromSTI(str1);
+	}
 	else
 		mode = MODE_NOTHING;
 

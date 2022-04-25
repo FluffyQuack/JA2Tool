@@ -21,7 +21,7 @@ enum
 	TGATYPE_UNCOMPRESSED_RGB = 2,
 	TGATYPE_UNCOMPRESSED_BLACKANDWHITE = 3,
 	TGATYPE_RLE_INDEXED = 9,
-	TGATYPE_RLE_RGB = 9,
+	TGATYPE_RLE_RGB = 10,
 	TGATYPE_HUFFMAN_INDEXED = 32,
 	TGATYPE_HUFFMAN_INDEXED_ALT = 33,
 };
@@ -167,6 +167,6 @@ struct bmpColorMapEntry_s {
 	unsigned char rgbGreen;
 	unsigned char rgbRed;
 	unsigned char rgbReserved;
-} RGBQUAD;
+};
 
 #pragma pack(pop)

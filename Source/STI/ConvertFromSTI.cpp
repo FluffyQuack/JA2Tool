@@ -4,7 +4,11 @@
 #include "STIformat.h"
 #include "..\lodepng\lodepng.h"
 
-static bool WriteBMP(char *filename, unsigned char *imgData, unsigned int imgDataSize, int width, int height, unsigned int bitDepth, bool subImages = 0, unsigned subImageNum = 0, paletteElement_s *palette = 0, unsigned offsetX = 0, unsigned offsetY = 0, unsigned int redMask = 0, unsigned int greenMask = 0, unsigned int blueMask = 0)
+static bool stiAddBorderBasedOnOffset = 0;
+static bool stiAddBorderForSubImages = 0;
+static bool stiRenderSTIToMiddleOfCanvas = 0;
+
+static bool WriteBMP(char *filename, unsigned char *imgData, unsigned int imgDataSize, int width, int height, unsigned int bitDepth, bool subImages = 0, unsigned subImageNum = 0, paletteElement_s *palette = 0, int offsetX = 0, int offsetY = 0, unsigned int redMask = 0, unsigned int greenMask = 0, unsigned int blueMask = 0)
 {
 	//Generate path
 	char BMPPath[MAXPATH];
@@ -265,13 +269,118 @@ bool ConvertFromSTI(char *filename)
 					delete[]imgData;
 					return 0;
 				}
-				
-				if(!WriteBMP(filename, imgData, imgDataSize, subImageHeader[subImageNum].width, subImageHeader[subImageNum].height, 8, stiHeader->Indexed.subImageCount > 1, subImageNum, palette, subImageHeader[subImageNum].offsetX, subImageHeader[subImageNum].offsetY))
+
+				int offsetX = subImageHeader[subImageNum].offsetX;
+				int offsetY = subImageHeader[subImageNum].offsetY;
+				int width = subImageHeader[subImageNum].width;
+				int height = subImageHeader[subImageNum].height;
+				if(stiAddBorderBasedOnOffset && (offsetX < 0 || offsetY < 0)) //Add padding to left or upper sides of the image based on offset values
+				{
+					//Calculate new size
+					int newWidth = width;
+					int newHeight = height;
+					int xPadding = 0;
+					int yPadding = 0;
+					if(offsetX < 0)
+					{
+						xPadding = -offsetX;
+						newWidth += xPadding;
+					}
+					if(offsetY < 0)
+					{
+						yPadding = -offsetY;
+						newHeight += yPadding;
+					}
+					unsigned int newImgDataSize = newWidth * newHeight;
+
+					//Create new buffer and move data to it
+					unsigned char *newImgData = new unsigned char[newImgDataSize];
+					memset(newImgData, 0, newImgDataSize);
+					for(int y = 0; y < height; y++)
+						memcpy(&newImgData[xPadding + (newWidth * (y + yPadding))], &imgData[width * y], width);
+
+					//Update variables
+					width = newWidth;
+					height = newHeight;
+					imgDataSize = newImgDataSize;
+					delete[]imgData;
+					imgData = newImgData;
+					offsetX = 0;
+					offsetY = 0;
+				}
+
+				if(stiAddBorderForSubImages && (width < stiHeader->width || height < stiHeader->height)) //Add padding to the right or lower sides of the image based on the image size listed in STI header
+				{
+					//Calculate new size
+					int newWidth = width;
+					int newHeight = height;
+					int xPadding = 0;
+					int yPadding = 0;
+					if(width < stiHeader->width)
+					{
+						xPadding = stiHeader->width - width;
+						newWidth += xPadding;
+					}
+					if(height < stiHeader->height)
+					{
+						yPadding = stiHeader->height - height;
+						newHeight += yPadding;
+					}
+					unsigned int newImgDataSize = newWidth * newHeight;
+
+					//Create new buffer and move data to it
+					unsigned char *newImgData = new unsigned char[newImgDataSize];
+					memset(newImgData, 0, newImgDataSize);
+					for(int y = 0; y < height; y++)
+						memcpy(&newImgData[newWidth * y], &imgData[width * y], width);
+
+					//Update variables
+					width = newWidth;
+					height = newHeight;
+					imgDataSize = newImgDataSize;
+					delete[]imgData;
+					imgData = newImgData;
+					offsetX = 0;
+					offsetY = 0;
+				}
+
+				if(stiRenderSTIToMiddleOfCanvas && (width < stiHeader->width || height < stiHeader->height))
+				{
+					//Calculate new size
+					int newWidth = stiHeader->width;
+					int newHeight = stiHeader->height;
+					int posX = 0;
+					int posY = 0;
+					if(width < stiHeader->width)
+						posX = (stiHeader->width / 2) + offsetX;
+					if(height < stiHeader->height)
+						posY = (stiHeader->height / 2) + offsetY;
+
+					unsigned int newImgDataSize = newWidth * newHeight;
+
+					//Create new buffer and move data to it
+					unsigned char *newImgData = new unsigned char[newImgDataSize];
+					memset(newImgData, 0, newImgDataSize);
+					for(int y = 0; y < height; y++)
+						memcpy(&newImgData[posX + (newWidth * (y + posY))], &imgData[width * y], width);
+
+					//Update variables
+					width = newWidth;
+					height = newHeight;
+					imgDataSize = newImgDataSize;
+					delete[]imgData;
+					imgData = newImgData;
+					offsetX = 0;
+					offsetY = 0;
+				}
+
+				if(!WriteBMP(filename, imgData, imgDataSize, width, height, 8, stiHeader->Indexed.subImageCount > 1, subImageNum, palette, offsetX, offsetY))
 				{
 					delete[]data;
 					delete[]imgData;
 					return 0;
 				}
+				delete[]imgData;
 			}
 			else
 			{

@@ -7,6 +7,7 @@ enum
 	FILETYPE_UNKNOWN,
 	FILETYPE_SLF,
 	FILETYPE_STI,
+	FILETYPE_PNG,
 };
 
 void AddExtensionBasedOnFileType(int fileType, char *fileName, unsigned char *data);

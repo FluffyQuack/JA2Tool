@@ -32,6 +32,8 @@ int CheckFileType(char *str1)
 				return FILETYPE_SLF;
 			else if (_stricmp(ext, "sti") == 0) //Texture
 				return FILETYPE_STI;
+			else if (_stricmp(ext, "png") == 0) //Texture
+				return FILETYPE_PNG;
 		}
 	}
 	return FILETYPE_UNKNOWN;

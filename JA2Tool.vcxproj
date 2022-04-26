@@ -146,6 +146,7 @@
     <ClCompile Include="Source\lodepng\lodepng.cpp" />
     <ClCompile Include="Source\misc.cpp" />
     <ClCompile Include="Source\STI\ConvertFromSTI.cpp" />
+    <ClCompile Include="Source\STI\ConvertToSTI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Create.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="Source\lodepng\lodepng.h" />
     <ClInclude Include="Source\misc.h" />
     <ClInclude Include="Source\SLFformat.h" />
+    <ClInclude Include="Source\STI\ConvertToSTI.h" />
     <ClInclude Include="Source\STI\STIformat.h" />
     <ClInclude Include="Source\STI\ConvertFromSTI.h" />
   </ItemGroup>

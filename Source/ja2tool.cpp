@@ -6,6 +6,7 @@
 #include "misc.h"
 #include "dir.h"
 #include "STI\ConvertFromSTI.h"
+#include "STI\ConvertToSTI.h"
 
 enum
 {
@@ -14,6 +15,7 @@ enum
 	MODE_LISTFILES,
 	//MODE_REPACK,
 	MODE_SINGLEFILE_STI,
+	MODE_SINGLEFILE_PNG,
 };
 
 bool convertFromSTI = 0;
@@ -32,11 +34,11 @@ int _tmain(int argc, _TCHAR *argv[])
 {
 	//Defaults
 	int mode = MODE_NOTHING;
-	bool createdNewHashList = 0;
+	int offsetX = 0, offsetY = 0, subImageHeight = 0; //Used for PNG to STI conversion
 
 	//Process command line arguments
 	int i = 1, strcount = 0;
-	char *str1 = 0, *str2 = 0, *filenameHashList = 0;
+	char *str1 = 0, *str2 = 0;
 	while(argc > i)
 	{
 		if (argv[i][0] == '-')
@@ -49,6 +51,24 @@ int _tmain(int argc, _TCHAR *argv[])
 				mode = MODE_LISTFILES;
 			else if (_stricmp(argv[i], "-sti") == 0)
 				convertFromSTI = 1;
+			else if (_stricmp(argv[i], "-subImageHeight") == 0 || _stricmp(argv[i], "-imageHeight") == 0 || _stricmp(argv[i], "-height") == 0)
+			{
+				if (argc > i)
+				{
+					subImageHeight = atoi(argv[i + 1]);
+					i++;
+				}
+			}
+			else if (_stricmp(argv[i], "-offsets") == 0)
+			{
+				if (argc > i + 1)
+				{
+					offsetX = atoi(argv[i + 1]);
+					i++;
+					offsetY = atoi(argv[i + 1]);
+					i++;
+				}
+			}
 		}
 		else
 		{
@@ -71,6 +91,8 @@ int _tmain(int argc, _TCHAR *argv[])
 			mode = MODE_EXTRACT;
 		else if(fileType == FILETYPE_STI)
 			mode = MODE_SINGLEFILE_STI;
+		else if(fileType == FILETYPE_PNG)
+			mode = MODE_SINGLEFILE_PNG;
 	}
 
 	if(mode == MODE_EXTRACT && str1)
@@ -89,10 +111,14 @@ int _tmain(int argc, _TCHAR *argv[])
 	{
 		ConvertFromSTI(str1);
 	}
+	else if(mode == MODE_SINGLEFILE_PNG && str1)
+	{
+		ConvertToSTI(str1, offsetX, offsetY, subImageHeight);
+	}
 	else
 		mode = MODE_NOTHING;
 
-	if(mode == MODE_NOTHING && createdNewHashList == 0)
+	if(mode == MODE_NOTHING)
 		HelpText();
 
 	Dir_Deinit();

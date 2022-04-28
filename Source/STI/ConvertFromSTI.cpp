@@ -215,52 +215,50 @@ bool ConvertFromSTI(char *filename)
 			unsigned int imgDataSize = subImageHeader[subImageNum].width * subImageHeader[subImageNum].height;
 			unsigned char *imgData = new unsigned char[imgDataSize];
 			unsigned int posFrom = sizeof(stiHeader_s) + paletteSize + (sizeof(stiSubImage_s) * stiHeader->Indexed.subImageCount) + subImageHeader[subImageNum].offset;
+			unsigned int posEnd = posFrom + subImageHeader[subImageNum].size;
 			offset += subImageHeader[subImageNum].size;
 			unsigned int posTo = 0;
 
 			if(stiHeader->flags & STIFLAG_ETRLE_COMPRESSED) //Handle RLE compression
 			{
-#define ALPHA_VALUE 0
-#define IS_COMPRESSED_BYTE_MASK 0x80
-#define NUMBER_OF_BYTES_MASK 0x7F
-				int bytes_til_next_control_byte = 0;
-				unsigned int progress;
-				for(progress = 0; progress < subImageHeader[subImageNum].size; progress++, posFrom++)
+				int curHeight = 0;
+				while(curHeight < subImageHeader[subImageNum].height)
 				{
-					if(bytes_til_next_control_byte == 0)
+					if(posFrom >= posEnd)
+						goto stop;
+					unsigned char controlByte = data[posFrom];
+					posFrom++;
+					if(controlByte == 0) //If zero, that means end of a row
 					{
-						bool is_compressed_alpha_byte = ((data[posFrom] & IS_COMPRESSED_BYTE_MASK) >> 7) == 1;
-						int length_of_subsequence = data[posFrom] & NUMBER_OF_BYTES_MASK;
-						if(is_compressed_alpha_byte)
-						{
-							for(int i = 0; i < length_of_subsequence; i++)
-							{
-								if(posTo >= imgDataSize)
-									goto stop;
-								imgData[posTo] = ALPHA_VALUE;
-								posTo++;
-							}
-						}
-						else
-							bytes_til_next_control_byte = length_of_subsequence;
+						curHeight++;
+						continue;
 					}
-					else
+					unsigned char length = controlByte & NUMBER_OF_BYTES_MASK;
+					if(controlByte & IS_COMPRESSED_BYTE_MASK) //Transparent sequence of pixels
 					{
-						if(posTo >= imgDataSize)
+						for(int i = 0; i < length; i++)
+						{
+							if(posTo >= imgDataSize)
+								goto stop;
+							imgData[posTo] = ALPHA_VALUE;
+							posTo++;
+						}
+					}
+					else //Sequence of opaque pixels (we copy data as-is)
+					{
+						if(posTo + length > imgDataSize)
 							goto stop;
-						imgData[posTo] = data[posFrom];
-						posTo++;
-						bytes_til_next_control_byte--;
+						memcpy(&imgData[posTo], &data[posFrom], length);
+						posTo += length;
+						posFrom += length;
 					}
 				}
+
 			stop:
 
-				if(posTo < imgDataSize)
-					memset(&imgData[posTo], 0, imgDataSize - posTo);
-
-				if(bytes_til_next_control_byte != 0)
+				if(posTo != imgDataSize)
 				{
-					printf("Error: Failed to decompress ETRLE compression in %s\n", filename_short);
+					printf("Error: Failed to decompress ETRLE image data in %s\n", filename_short);
 					delete[]data;
 					delete[]imgData;
 					return 0;

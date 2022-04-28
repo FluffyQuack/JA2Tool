@@ -4,10 +4,24 @@
 #define BMP_MAGIC 19778 //BM
 #define PALETTEENTRIES 256
 
+/*
+*  How the ETRLE compression works for STI images:
+* - Transparency is defined with the encoding rather than a colour in the palette. Though I think palette entry #0 is supposed to represent transparency anyway
+* - Decode the data like this:
+* -- First byte is a "control byte"
+* -- Control bytes contain two pieces of data: first 7 bites signify length of data to follow, and the last bit signify transparency
+* -- If control byte has its last bit (0x80) set to true, then the control byte defines quantity of transparent bytes in a row. So we save X amount of transparent bytes into output, and move input position forward by one
+* -- If control byte has its last bit set to false, then the control byte define quantity of opaque pixels to follow. So, we copy X amount of bytes from input array to output array, and then move input and output positions by X amount as well
+* -- If control byte is 0, then that means we've reached the end of a row of bytes (stride), and we should simply move input position one forward. When encoding, we need to always keep track of how far long a row we are, so we know when to add a control byte with value 0
+*/
+#define ALPHA_VALUE 0
+#define IS_COMPRESSED_BYTE_MASK 0x80
+#define NUMBER_OF_BYTES_MASK 0x7F
+
 enum
 {
-	STIFLAG_TRANSPARENT = 1 << 0, //Never referenced in JA2 code
-	STIFLAG_ALPHA = 1 << 1, //Never referenced in JA2 code
+	STIFLAG_TRANSPARENT = 1 << 0, //Never referenced in JA2 code?
+	STIFLAG_ALPHA = 1 << 1, //Never referenced in JA2 code?
 	STIFLAG_RGB = 1 << 2, //If true, this is a 16-bit RGBA image
 	STIFLAG_INDEXED = 1 << 3, //If true, this is an 8-bit indexed image
 	STIFLAG_ZLIB_COMPRESSED = 1 << 4,

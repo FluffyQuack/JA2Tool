@@ -178,6 +178,7 @@ bool ConvertFromSTI(char *filename)
 	stiHeader_s *stiHeader = (stiHeader_s *) data;
 
 	//Handle variants
+	unsigned long long endOfImgDataPos = 0;
 	if(stiHeader->flags & STIFLAG_RGB) //16-bit RGB(A) image
 	{
 		if(stiHeader->flags & STIFLAG_ZLIB_COMPRESSED || stiHeader->flags & STIFLAG_ETRLE_COMPRESSED)
@@ -192,6 +193,7 @@ bool ConvertFromSTI(char *filename)
 			delete[]data;
 			return 0;
 		}
+		endOfImgDataPos = sizeof(stiHeader_s) + stiHeader->imageDataSize;
 	}
 	else if(stiHeader->flags & STIFLAG_INDEXED) //8-bit indexed image
 	{
@@ -381,12 +383,50 @@ bool ConvertFromSTI(char *filename)
 			}
 			delete[]imgData;
 		}
+
+		endOfImgDataPos = offset;
 	}
 	else
 	{
 		printf("Error: Unknown image format in %s\n", filename_short);
 		delete[]data;
 		return 0;
+	}
+
+	//Handle aux data
+	if(stiHeader->appDataSize)
+	{
+		AuxObjectData_s *auxData = (AuxObjectData_s *) &data[endOfImgDataPos];
+
+		//Generate txt path
+		char TXTPath[MAXPATH];
+		memset(TXTPath, 0, MAXPATH);
+		char filenameWithoutExtension[MAXPATH];
+		strcpy(filenameWithoutExtension, filename);
+		int firstDot = FirstDot(filenameWithoutExtension);
+		if(firstDot != 0)
+			filenameWithoutExtension[firstDot] = 0;
+		sprintf(TXTPath, "%s.txt", filenameWithoutExtension);
+
+		//Write text file
+		FILE *file = 0;
+		fopen_s(&file, TXTPath, "wb");
+		if(file)
+		{
+			for(int i = 0; i < stiHeader->Indexed.subImageCount; i++)
+			{
+				if(i > 0)
+					fprintf(file, "\r\n");
+				fprintf(file, "-Frame #%i:\r\n", i);
+				fprintf(file, "--ubWallOrientation: %u\r\n", auxData[i].ubWallOrientation);
+				fprintf(file, "--ubNumberOfTiles: %u\r\n", auxData[i].ubNumberOfTiles);
+				fprintf(file, "--usTileLocIndex: %u\r\n", auxData[i].usTileLocIndex);
+				fprintf(file, "--ubCurrentFrame: %u\r\n", auxData[i].ubCurrentFrame);
+				fprintf(file, "--ubNumberOfFrames: %u\r\n", auxData[i].ubNumberOfFrames);
+				fprintf(file, "--fFlags: %u\r\n", auxData[i].fFlags);
+			}
+			fclose(file);
+		}
 	}
 
 	delete[]data;

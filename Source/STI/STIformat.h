@@ -20,12 +20,22 @@
 
 enum
 {
-	STIFLAG_TRANSPARENT = 1 << 0, //Never referenced in JA2 code?
-	STIFLAG_ALPHA = 1 << 1, //Never referenced in JA2 code?
+	STIFLAG_TRANSPARENT = 1 << 0, //Never referenced in JA2 code
+	STIFLAG_ALPHA = 1 << 1, //Never referenced in JA2 code
 	STIFLAG_RGB = 1 << 2, //If true, this is a 16-bit RGBA image
 	STIFLAG_INDEXED = 1 << 3, //If true, this is an 8-bit indexed image
 	STIFLAG_ZLIB_COMPRESSED = 1 << 4,
 	STIFLAG_ETRLE_COMPRESSED = 1 << 5,
+};
+
+enum
+{
+	STIAUX_FULL_TILE = 1 << 0, //Only applicable to terrain tiles
+	STIAUX_ANIMATED_TILE = 1 << 1, //Used for cursor and some tiles. Not sure if it's used for sprites too
+	STIAUX_DYNAMIC_TILE = 1 << 2, //Never referenced in JA2 code
+	STIAUX_INTERACTIVE_TILE = 1 << 3, //Never referenced in JA2 code
+	STIAUX_IGNORES_HEIGHT = 1 << 4, //Never referenced in JA2 code
+	STIAUX_USES_LAND_Z = 1 << 5, //Never referenced in JA2 code
 };
 
 enum
@@ -106,8 +116,9 @@ struct stiHeader_s
 	};
 
 	unsigned char colourDepth; //Bits per pixel
+	unsigned char padding[3]; //Padding to reflect the alignment the JA2 code expects
 	unsigned int appDataSize; //Always 0 for images with no extra sub-images? If sub-images, 16 * image count?
-	unsigned char unused[15];
+	unsigned char unused[12];
 };
 
 struct stiSubImage_s
@@ -118,6 +129,18 @@ struct stiSubImage_s
 	short offsetY;
 	unsigned short height;
 	unsigned short width;
+};
+
+struct AuxObjectData_s
+{
+	unsigned char ubWallOrientation;
+	unsigned char ubNumberOfTiles;
+	unsigned short usTileLocIndex;
+	unsigned char ubUnused1[3];
+	unsigned char ubCurrentFrame;
+	unsigned char ubNumberOfFrames;
+	unsigned char fFlags;
+	unsigned char ubUnused[6];
 };
 
 struct paletteElement_s

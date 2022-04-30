@@ -19,6 +19,7 @@ enum
 };
 
 bool convertFromSTI = 0;
+char *pngWithPalette = 0;
 
 void HelpText()
 {
@@ -66,6 +67,14 @@ int _tmain(int argc, _TCHAR *argv[])
 					offsetX = atoi(argv[i + 1]);
 					i++;
 					offsetY = atoi(argv[i + 1]);
+					i++;
+				}
+			}
+			else if (_stricmp(argv[i], "-palette") == 0)
+			{
+				if (argc > i)
+				{
+					pngWithPalette = argv[i + 1];
 					i++;
 				}
 			}
